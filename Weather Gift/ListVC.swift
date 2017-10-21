@@ -7,10 +7,11 @@
 //
 
 import UIKit
+import GooglePlaces
 
 class ListVC: UIViewController {
 
-    var locationsArray = [String]()
+    var locationsArray = [WeatherLocation]()
     var currentPage = 0
     
     @IBOutlet private weak var addBarButton: UIBarButtonItem!
@@ -32,7 +33,7 @@ class ListVC: UIViewController {
         }
     }
     
-    @IBAction func editBarButtonPressed(_ sender: UIBarButtonItem) {
+    @IBAction private func editBarButtonPressed(_ sender: UIBarButtonItem) {
         if tableView.isEditing {
             tableView.setEditing(false, animated: true)
             editBarButton.title = "Edit"
@@ -43,6 +44,40 @@ class ListVC: UIViewController {
             addBarButton.isEnabled = false
         }
     }
+    
+    @IBAction private func addBarButtonPressed(_ sender: UIBarButtonItem) {
+        let autocompleteController = GMSAutocompleteViewController()
+        autocompleteController.delegate = self
+        present(autocompleteController, animated: true, completion: nil)
+    }
+}
+
+extension ListVC: GMSAutocompleteViewControllerDelegate {
+    
+    // Handle the user's selection.
+    func viewController(_ viewController: GMSAutocompleteViewController, didAutocompleteWith place: GMSPlace) {
+        dismiss(animated: true, completion: nil)
+        updateTable(place: place)
+    }
+    
+    func viewController(_ viewController: GMSAutocompleteViewController, didFailAutocompleteWithError error: Error) {
+        // TODO: handle the error.
+        print("Error: ", error.localizedDescription)
+    }
+    
+    // User canceled the operation.
+    func wasCancelled(_ viewController: GMSAutocompleteViewController) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    // Turn the network activity indicator on and off again.
+    func didRequestAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+    }
+    
+    func didUpdateAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
+    }
 }
 
 extension ListVC: UITableViewDataSource, UITableViewDelegate {
@@ -52,7 +87,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath)
-        cell.textLabel?.text = locationsArray[indexPath.row]
+        cell.textLabel?.text = locationsArray[indexPath.row].name
         return cell
     }
     
@@ -80,5 +115,14 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
         return (proposedDestinationIndexPath.row == 0 ? sourceIndexPath : proposedDestinationIndexPath)
+    }
+    
+    func updateTable(place: GMSPlace) {
+        let longitude = place.coordinate.longitude
+        let latitude = place.coordinate.latitude
+        
+        let newLocation = WeatherLocation(name: place.name, coordinates: "\(latitude),\(longitude)")
+        locationsArray.append(newLocation)
+        tableView.reloadData()
     }
 }
