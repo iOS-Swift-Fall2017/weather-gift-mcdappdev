@@ -9,13 +9,21 @@
 import UIKit
 import CoreLocation
 
+private let dateFormatter: DateFormatter = {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "EEEE, MMM dd, y"
+    return dateFormatter
+}()
+
 class DetailVC: UIViewController {
 
+    @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var currentImage: UIImageView!
     @IBOutlet weak var summaryLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var locationLabel: UILabel!
     @IBOutlet weak var temperatureLabel: UILabel!
+    
     var locationManager: CLLocationManager!
     var currentLocation: CLLocation!
     
@@ -24,6 +32,9 @@ class DetailVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tableView.delegate = self
+        tableView.dataSource = self
         
         locationsArray[currentPage].getWeather {
             self.updateUserInterface()
@@ -39,10 +50,12 @@ class DetailVC: UIViewController {
     private func updateUserInterface() {
         let location = locationsArray[currentPage]
         locationLabel.text = location.name
-        dateLabel.text = location.coordinates
+        
+        dateLabel.text = location.currentTime.format(timeZone: location.timeZone, dateFormatter: dateFormatter)
         temperatureLabel.text = location.currentTemp
         summaryLabel.text = location.currentSummary
         currentImage.image = UIImage(named: location.currentIcon)
+        tableView.reloadData()
     }
 }
 
@@ -97,5 +110,28 @@ extension DetailVC: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print(error)
+    }
+}
+
+//MARK: - UITableViewDataSource
+extension DetailVC: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return locationsArray[currentPage].dailyForecastArray.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "DayWeatherCell") as? DayWeatherTableViewCell else {
+            return UITableViewCell()
+        }
+        
+        let location = locationsArray[currentPage]
+        let dailyForcast = location.dailyForecastArray[indexPath.row]
+        
+        cell.update(with: dailyForcast, timeZone: location.timeZone)
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 80
     }
 }
