@@ -33,6 +33,15 @@ class ListVC: UIViewController {
         }
     }
     
+    private func saveLocations() {
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(locationsArray) {
+            UserDefaults.standard.set(encoded, forKey: "locationsArray")
+        } else {
+            print("ERROR: Saving encoded data did not work")
+        }
+    }
+    
     @IBAction private func editBarButtonPressed(_ sender: UIBarButtonItem) {
         if tableView.isEditing {
             tableView.setEditing(false, animated: true)
@@ -95,6 +104,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             locationsArray.remove(at: indexPath.row)
+            saveLocations()
             tableView.deleteRows(at: [indexPath], with: .fade)
         }
     }
@@ -103,6 +113,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
         let itemToMove = locationsArray[sourceIndexPath.row]
         locationsArray.remove(at: sourceIndexPath.row)
         locationsArray.insert(itemToMove, at: destinationIndexPath.row)
+        saveLocations()
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -123,6 +134,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
         
         let newLocation = WeatherLocation(name: place.name, coordinates: "\(latitude),\(longitude)")
         locationsArray.append(newLocation)
+        saveLocations()
         tableView.reloadData()
     }
 }
