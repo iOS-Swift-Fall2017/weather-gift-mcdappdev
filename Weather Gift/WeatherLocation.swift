@@ -12,6 +12,13 @@ import SwiftyJSON
 
 class WeatherLocation {
     
+    struct HourlyForecast {
+        var hourlyTime: Double
+        var hourlyTemperature: Double
+        var hourlyPrecipProb: Double
+        var hourlyIcon: String
+    }
+    
     struct DailyForecast {
         var dailyMaxTemp: Double
         var dailyMinTemp: Double
@@ -27,6 +34,7 @@ class WeatherLocation {
     var currentIcon = ""
     var currentTime = 0.0
     var timeZone = ""
+    var hourlyForecastArray = [HourlyForecast]()
     var dailyForecastArray = [DailyForecast]()
     
     init(name: String, coordinates: String, currentTemp: String = "--") {
@@ -51,10 +59,14 @@ class WeatherLocation {
                 self.currentTime = json["currently"]["time"].doubleValue
                 self.timeZone = json["timezone"].stringValue
                 
-                //start looping
+                //start looping for daily data
                 let dailyDataArray = json["daily"]["data"]
                 self.dailyForecastArray = []
-                for day in dailyDataArray {
+                let days = min(7, dailyDataArray.count - 1)
+                for (index, day) in dailyDataArray.enumerated() {
+                    if (index) >= days {
+                        break
+                    }
                     let dayJson = day.1
                     let maxTemp = dayJson["temperatureHigh"].doubleValue
                     let minTemp = dayJson["temperatureLow"].doubleValue
@@ -64,6 +76,26 @@ class WeatherLocation {
                     
                     let newDailyForecast = DailyForecast(dailyMaxTemp: maxTemp, dailyMinTemp: minTemp, dailyDate: dateValue, dailySummary: dailySummary, dailyIcon: icon)
                     self.dailyForecastArray.append(newDailyForecast)
+                }
+                
+                let hourlyDataArray = json["hourly"]["data"]
+                self.hourlyForecastArray = []
+                
+                let hours = min(24, hourlyDataArray.count - 1)
+                
+                for (index, hour) in hourlyDataArray.enumerated() {
+                    if (index) >= hours {
+                        break
+                    }
+                    
+                    let hourJson = hour.1
+                    let hourlyTime = hourJson["time"].doubleValue
+                    let hourlyTemperature = hourJson["temperature"].doubleValue
+                    let hourlyPrecipProb = hourJson["precipProbability"].doubleValue
+                    let hourlyIcon = hourJson["icon"].stringValue
+                    
+                    let newHourlyForecast = HourlyForecast(hourlyTime: hourlyTime, hourlyTemperature: hourlyTemperature, hourlyPrecipProb: hourlyPrecipProb, hourlyIcon: hourlyIcon)
+                    self.hourlyForecastArray.append(newHourlyForecast)
                 }
             case .failure(let error):
                 print(error)
