@@ -23,6 +23,7 @@ class DetailVC: UIViewController {
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var locationLabel: UILabel!
     @IBOutlet weak var temperatureLabel: UILabel!
+    @IBOutlet weak var collectionView: UICollectionView!
     
     var locationManager: CLLocationManager!
     var currentLocation: CLLocation!
@@ -35,6 +36,9 @@ class DetailVC: UIViewController {
         
         tableView.delegate = self
         tableView.dataSource = self
+        
+        collectionView.dataSource = self
+        collectionView.delegate = self
         
         locationsArray[currentPage].getWeather {
             self.updateUserInterface()
@@ -133,5 +137,18 @@ extension DetailVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 80
+    }
+}
+
+//MARK: - UICollectionViewDataSource and Delegate
+extension DetailVC: UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return 24
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let hourlyCell = collectionView.dequeueReusableCell(withReuseIdentifier: "HourlyCell", for: indexPath)
+        
+        return hourlyCell
     }
 }
